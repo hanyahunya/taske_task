@@ -30,9 +30,25 @@ public class Trigger {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Task task;
 
-    @Column(name = "trigger_type", length = 50, nullable = false)
-    private String triggerType; // 예: "SCHEDULE", "GMAIL_NEW_EMAIL" todo 모듈화?
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "capability_id", nullable = false)
+    private ModuleCapability capability;
 
+    /*
+    - 빈칸 채우기 양식( capability ) 에서 정의한 param_schema
+    {
+        "properties": {
+            "to": { "type": "string" },
+            "subject": { "type": "string" }
+        }
+    }
+
+    ### trigger_config ### 해당 양식에 실제로 들어갈 값들을 정의
+    {
+        "to": "friend@example.com",
+        "subject": "새로운 YouTube 영상 알림!"
+    }
+     */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "trigger_config", columnDefinition = "json")
     private Map<String, Object> triggerConfig;

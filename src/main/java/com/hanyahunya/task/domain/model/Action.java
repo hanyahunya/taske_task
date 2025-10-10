@@ -15,15 +15,15 @@ import java.util.Map;
 @Entity
 @Getter
 @Builder
-@Table(name = "works")
+@Table(name = "actions")
 @NoArgsConstructor
 @AllArgsConstructor
-public class Work {
+public class Action {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "work_id")
-    private Long workId;
+    @Column(name = "action_id")
+    private Long actionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
@@ -33,10 +33,12 @@ public class Work {
     @Column(name = "execution_order", nullable = false)
     private int executionOrder;
 
-    @Column(name = "work_type", length = 50, nullable = false)
-    private String workType; // todo 어떻게 설정할지
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "capability_id", nullable = false)
+    private ModuleCapability capability;
 
+    // 사용자가 입력한 실제 설정값을 저장
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "work_config", columnDefinition = "json")
-    private Map<String, Object> workConfig;
+    @Column(name = "action_config", columnDefinition = "json")
+    private Map<String, Object> actionConfig;
 }
