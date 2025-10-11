@@ -37,6 +37,7 @@ public class ModuleCapability {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    // 처음에 유저가 등록할때만 사용
     /*
         ["https://www.googleapis.com/auth/youtube.readonly", "https://www.googleapis.com/auth/gmail.send",...]
      */
@@ -44,6 +45,7 @@ public class ModuleCapability {
     @Column(name = "required_scopes", columnDefinition = "json")
     private List<String> requiredScopes; // ["value1", "value2", ...]
 
+    // worker 서비스에 전송할 필요 있음 엔드포인트 + method
     /*
         - TRIGGER EXAMPLE: 이 트리거가 어떻게 동작하는지.
         {
@@ -64,6 +66,7 @@ public class ModuleCapability {
     @Column(name = "execution_spec", columnDefinition = "json")
     private Map<String, Object> executionSpec; // { "key1": "value1", ...}
 
+    //
     /*
         - TRIGGER EXAMPLE 이 트리거를 설정할때 사용자에게 어떤 정보를 입력받아야 하는지.
         {
