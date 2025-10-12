@@ -14,7 +14,12 @@ import java.util.Map;
 @Entity
 @Getter
 @Builder
-@Table(name = "module_capabilities")
+@Table(
+        name = "module_capabilities",
+        indexes = {
+                @Index(name = "idx_capability_type_execution_type", columnList = "capability_type, execution_type")
+        }
+)
 @NoArgsConstructor
 @AllArgsConstructor
 public class ModuleCapability {
@@ -45,11 +50,16 @@ public class ModuleCapability {
     @Column(name = "required_scopes", columnDefinition = "json")
     private List<String> requiredScopes; // ["value1", "value2", ...]
 
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "execution_type", length = 20, nullable = false)
+    private ExecutionType executionType; // HTTP_POLLING, WEBHOOK, HTTP_REQUEST 등
+
     // worker 서비스에 전송할 필요 있음 엔드포인트 + method
     /*
         - TRIGGER EXAMPLE: 이 트리거가 어떻게 동작하는지.
         {
-            "type": "HTTP_POLLING",
+            "type": "HTTP_POLLING",             ### type 컬럼 제거 -> json 밖에 따로 enum 컬럼으로 재정의
             "cron": "*./5 * * * *",
             "endpoint": "/youtube/v3/activities",
             "method": "GET"
@@ -57,7 +67,7 @@ public class ModuleCapability {
         =========================================================================
         - ACTION EXAMPLE: 이 Action이 어떻게 동작하는지
         {
-            "type": "HTTP_REQUEST",
+            "type": "HTTP_REQUEST",             ### type 컬럼 제거 -> json 밖에 따로 enum 컬럼으로 재정의
             "endpoint": "/gmail/v1/users/me/messages/send",
             "method": "POST"
         }
@@ -97,7 +107,7 @@ public class ModuleCapability {
     private Map<String, Object> paramSchema;
 
     /*
-        - TRIGGER EXAMPLE: Trigger가 성공적으로 실행되었을때 어떤 데이터를 출력하는지
+        - TRIGGER EXAMPLE: Trigger가 성공적으로 실행되었을때 어떤 데이터를 출력하는지              ### for HTTP_POLLING
             -> 다음 Action 단계에서 {{trigger.output.videoId}} 처럼 결과값 참조시 쓰일 예정
         {
             "type": "object",
