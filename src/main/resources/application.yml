@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: task
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${TASKE_TASK_DB_URL}
+    username: ${TASKE_TASK_DB_USERNAME}
+    password: ${TASKE_TASK_DB_PASSWORD}
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    generate-ddl: true
+    show-sql: false
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: true
+    consumer:
+      group-id: auth-group
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "com.hanyahunya.kafkaDto"
+        spring.json.use.type.headers: true
+  # gRPC
+  grpc:
+    client:
+      channels:
+        integration-service:
+          address: static://localhost:9091
+          negotiation-type: plaintext
+server:
+  port: 8008
