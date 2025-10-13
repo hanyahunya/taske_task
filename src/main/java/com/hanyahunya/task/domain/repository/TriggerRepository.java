@@ -1,4 +1,4 @@
-package com.hanyahunya.task.domain;
+package com.hanyahunya.task.domain.repository;
 
 import com.hanyahunya.task.domain.model.Trigger;
 import org.springframework.data.jpa.repository.JpaRepository;
