@@ -3,7 +3,7 @@ package com.hanyahunya.task.adapter.in.schedule;
 import com.hanyahunya.task.application.port.command.FireTriggerCommand;
 import com.hanyahunya.task.application.port.in.FireTriggerUseCase;
 import com.hanyahunya.task.domain.model.Trigger;
-import com.hanyahunya.task.domain.TriggerRepository;
+import com.hanyahunya.task.domain.repository.TriggerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.support.CronExpression;

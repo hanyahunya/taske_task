@@ -1,6 +1,8 @@
 spring:
   application:
     name: task
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${TASKE_TASK_DB_URL}
