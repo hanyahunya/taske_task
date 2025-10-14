@@ -18,8 +18,9 @@ import java.util.List;
 public class Module {
 
     @Id
-    @Column(name = "module_id", length = 50)
-    private String moduleId;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "module_id")
+    private ModuleType moduleId;
 
     @Column(name = "module_name", length = 100, nullable = false)
     private String moduleName;
