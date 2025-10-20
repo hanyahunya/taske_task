@@ -1,6 +1,10 @@
 package com.hanyahunya.task.application.service;
 
+import com.hanyahunya.task.application.exception.EntityNotFoundException;
 import com.hanyahunya.task.application.port.command.CreateTaskCommand;
+import com.hanyahunya.task.application.port.command.DeleteTaskCommand;
+import com.hanyahunya.task.application.port.command.UpdateTaskActiveCommand;
+import com.hanyahunya.task.application.port.command.UpdateTaskNameCommand;
 import com.hanyahunya.task.application.port.in.TaskUseCase;
 import com.hanyahunya.task.domain.model.Action;
 import com.hanyahunya.task.domain.model.ModuleCapability;

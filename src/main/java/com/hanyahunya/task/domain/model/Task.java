@@ -45,4 +45,12 @@ public class Task {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public void updateTaskName(String taskName) {
+        this.taskName = taskName;
+    }
+
+    public void updateActive(boolean isActive) {
+        this.isActive = isActive;
+    }
 }
