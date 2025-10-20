@@ -6,6 +6,8 @@ import com.hanyahunya.task.application.port.command.DeleteTaskCommand;
 import com.hanyahunya.task.application.port.command.UpdateTaskActiveCommand;
 import com.hanyahunya.task.application.port.command.UpdateTaskNameCommand;
 import com.hanyahunya.task.application.port.in.TaskUseCase;
+import com.hanyahunya.task.application.port.response.TaskResponse;
+import com.hanyahunya.task.application.validation.ConfigValidator;
 import com.hanyahunya.task.domain.model.Action;
 import com.hanyahunya.task.domain.model.ModuleCapability;
 import com.hanyahunya.task.domain.model.Task;
@@ -15,13 +17,16 @@ import com.hanyahunya.task.domain.repository.ModuleCapabilityRepository;
 import com.hanyahunya.task.domain.repository.TaskRepository;
 import com.hanyahunya.task.domain.repository.TriggerRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TaskService implements TaskUseCase {
@@ -30,11 +35,12 @@ public class TaskService implements TaskUseCase {
     private final TriggerRepository triggerRepository;
     private final ActionRepository actionRepository;
     private final ModuleCapabilityRepository moduleCapabilityRepository;
+    private final ConfigValidator configValidator;
 
     @Override
     @Transactional
     public void createTask(CreateTaskCommand command) {
-        // todo ModelCa[ability의 설계도와 현재 들어온 config 정보가 일치하는지
+        log.info("Task 생성 로직 시작. User ID: {}", command.userId());
 
         Task task = Task.builder()
                 .taskName(command.taskName())
@@ -42,11 +48,20 @@ public class TaskService implements TaskUseCase {
                 .isActive(true)
                 .build();
         Task savedTask = taskRepository.save(task);
+        log.info("Task 저장 완료. Task ID: {}, User ID: {}", savedTask.getTaskId(), savedTask.getUserId());
 
-        // Trigger 생성 및 저장
+        // --- Trigger 생성 및 검증 ---
         CreateTaskCommand.TriggerCommand triggerCommand = command.trigger();
         ModuleCapability triggerCapability = moduleCapabilityRepository.findById(triggerCommand.capabilityId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid trigger capability id: " + triggerCommand.capabilityId()));
+                .orElseThrow(() -> {
+                    log.warn("잘못된 Trigger Capability ID 요청: {}", triggerCommand.capabilityId());
+                    return new IllegalArgumentException("Invalid trigger capability id: " + triggerCommand.capabilityId());
+                });
+
+        log.debug("Task ID {}: Trigger config 검증 시작... (Capability ID: {})", savedTask.getTaskId(), triggerCapability.getCapabilityId());
+        configValidator.validate(triggerCapability, triggerCommand.config());
+        log.debug("Task ID {}: Trigger config 검증 완료.", savedTask.getTaskId());
+
 
         Trigger trigger = Trigger.builder()
                 .task(savedTask)
@@ -54,23 +69,34 @@ public class TaskService implements TaskUseCase {
                 .triggerConfig(triggerCommand.config())
                 .build();
         triggerRepository.save(trigger);
+        log.debug("Task ID {}: Trigger 저장 완료", savedTask.getTaskId());
 
-        // Actions 생성 및 저장
+
+        // --- Actions 생성 및 검증 ---
         List<CreateTaskCommand.ActionCommand> actionCommands = command.actions();
         List<Action> actions = IntStream.range(0, actionCommands.size())
                 .mapToObj(i -> {
                     CreateTaskCommand.ActionCommand actionCommand = actionCommands.get(i);
                     ModuleCapability actionCapability = moduleCapabilityRepository.findById(actionCommand.capabilityId())
-                            .orElseThrow(() -> new IllegalArgumentException("Invalid action capability id: " + actionCommand.capabilityId()));
+                            .orElseThrow(() -> {
+                                log.warn("잘못된 Action Capability ID 요청: {}", actionCommand.capabilityId());
+                                return new IllegalArgumentException("Invalid action capability id: " + actionCommand.capabilityId());
+                            });
+
+                    // Validator 호출 (Action)
+                    log.debug("Task ID {}: Action {} config 검증 시작... (Capability ID: {})", savedTask.getTaskId(), i, actionCapability.getCapabilityId());
+                    configValidator.validate(actionCapability, actionCommand.config());
+                    log.debug("Task ID {}: Action {} config 검증 완료.", savedTask.getTaskId(), i);
 
                     return Action.builder()
                             .task(savedTask)
                             .capability(actionCapability)
                             .actionConfig(actionCommand.config())
-                            .executionOrder(i + 1) // 실행 순서
+                            .executionOrder(i) // 실행 순서
                             .build();
                 })
                 .collect(Collectors.toList());
+
         actionRepository.saveAll(actions);
         log.info("Task ID {}: {}개의 Action 저장 완료", savedTask.getTaskId(), actions.size());
     }
