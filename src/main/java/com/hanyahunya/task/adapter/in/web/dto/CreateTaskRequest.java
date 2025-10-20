@@ -1,20 +1,38 @@
 package com.hanyahunya.task.adapter.in.web.dto;
 
+import jakarta.validation.Valid; // @Valid 임포트
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty; // @NotEmpty 임포트
+import jakarta.validation.constraints.NotNull; // @NotNull 임포트
+
 import java.util.List;
 import java.util.Map;
 
 public record CreateTaskRequest(
+        @NotBlank
         String taskName,
+
+        @Valid
+        @NotNull
         TriggerRequest trigger,
+
+        @Valid
+        @NotEmpty
         List<ActionRequest> actions
 ) {
     public record TriggerRequest(
+            @NotBlank
             String capabilityId,
+
+            @NotNull
             Map<String, Object> config
     ) {}
 
     public record ActionRequest(
+            @NotBlank
             String capabilityId,
+
+            @NotNull
             Map<String, Object> config
     ) {}
 }
