@@ -20,8 +20,9 @@ import java.util.List;
 public class UserContextFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String userId = request.getHeader("X-USER-ID");
-        String userRoles = request.getHeader("X-USER-ROLES");
+        String userId = request.getHeader("X-User-Id");
+        String userRoles = request.getHeader("X-User-Role");
+
 
         if (userId != null && !userId.isEmpty()) {
             try {

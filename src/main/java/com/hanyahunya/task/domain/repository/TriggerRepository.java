@@ -10,6 +10,6 @@ public interface TriggerRepository extends JpaRepository<Trigger, Long> {
     @Query("SELECT t FROM Trigger t " +
             "JOIN FETCH t.task task " +
             "JOIN FETCH t.capability cap " +
-            "WHERE task.isActive = true AND cap.capabilityType = 'TRIGGER' AND cap.executionType = 'SCHEDULE'")
+            "WHERE task.isActive = true AND cap.capabilityType = 'TRIGGER' AND cap.executionType = 'SCHEDULING'")
     List<Trigger> findTriggersByExecutionTypeSchedule();
 }
