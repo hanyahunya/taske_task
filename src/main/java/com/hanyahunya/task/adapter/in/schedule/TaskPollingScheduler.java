@@ -44,9 +44,8 @@ public class TaskPollingScheduler {
                 // 다음 실행 시간이 있고, 그 시간이 현재 시간보다 이전이거나 같으면 실행 대상
                 if (nextExecutionTime != null && !nextExecutionTime.isAfter(now)) {
 
-                    System.out.println("Executing scheduled task for taskId: " + trigger.getTask().getTaskId());
-
                     FireTriggerCommand command = new FireTriggerCommand(
+                            trigger.getTask().getUserId(),
                             trigger.getTask().getTaskId(),
                             trigger.getCapability().getCapabilityId(),
                             Map.of()

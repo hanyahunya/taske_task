@@ -25,9 +25,11 @@ public class TriggerService implements FireTriggerUseCase {
 //                task.getTaskId(),
 //                triggerData // Trigger 발동으로 얻은 실제 결과 데이터
 //        );
+        // todo db에서 가져온 userId 입력되게 (command에서)
         TriggerFiredEvent event = new TriggerFiredEvent(
-                UUID.randomUUID(),
+                command.userId(),
                 command.taskId(),
+                command.capabilityId(),
                 command.triggerData() // Trigger 발동으로 얻은 실제 결과 데이터
         );
 
