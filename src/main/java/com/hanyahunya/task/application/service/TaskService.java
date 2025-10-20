@@ -68,5 +68,46 @@ public class TaskService implements TaskUseCase {
                 })
                 .collect(Collectors.toList());
         actionRepository.saveAll(actions);
+        log.info("Task ID {}: {}개의 Action 저장 완료", savedTask.getTaskId(), actions.size());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TaskResponse> getTask(UUID userId) {
+        return taskRepository.findAllByUserIdOrderByTaskIdDesc(userId).stream()
+                .map(TaskResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void deleteTask(DeleteTaskCommand command) {
+        if (command.role() == null) {
+            taskRepository.deleteByTaskIdAndUserId(command.taskId(), command.userId());
+        } else {
+            taskRepository.deleteById(command.taskId());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateTaskActive(UpdateTaskActiveCommand command) {
+        Task task;
+        if (command.role() == null) {
+            task = taskRepository.findByTaskIdAndUserId(command.taskId(), command.userId())
+                    .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + command.taskId()));
+        } else {
+            task = taskRepository.findById(command.taskId())
+                    .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + command.taskId()));
+        }
+        task.updateActive(command.isActive());
+    }
+
+    @Override
+    @Transactional
+    public void updateTaskName(UpdateTaskNameCommand command) {
+        Task task = taskRepository.findByTaskIdAndUserId(command.taskId(), command.userId())
+                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + command.taskId()));
+        task.updateTaskName(command.taskName());
     }
 }
