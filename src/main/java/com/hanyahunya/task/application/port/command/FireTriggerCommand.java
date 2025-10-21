@@ -6,6 +6,5 @@ import java.util.UUID;
 public record FireTriggerCommand(
         UUID userId,
         Long taskId,
-        String capabilityId,
         Map<String, Object> triggerData
 ) {}
