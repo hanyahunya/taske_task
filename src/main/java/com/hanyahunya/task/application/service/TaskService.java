@@ -5,6 +5,7 @@ import com.hanyahunya.task.application.port.command.CreateTaskCommand;
 import com.hanyahunya.task.application.port.command.DeleteTaskCommand;
 import com.hanyahunya.task.application.port.command.UpdateTaskActiveCommand;
 import com.hanyahunya.task.application.port.command.UpdateTaskNameCommand;
+import com.hanyahunya.task.application.port.in.GetExecutionDetailsUseCase;
 import com.hanyahunya.task.application.port.in.TaskUseCase;
 import com.hanyahunya.task.application.port.response.TaskResponse;
 import com.hanyahunya.task.application.validation.ConfigValidator;
@@ -29,7 +30,7 @@ import java.util.stream.IntStream;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TaskService implements TaskUseCase {
+public class TaskService implements TaskUseCase, GetExecutionDetailsUseCase {
 
     private final TaskRepository taskRepository;
     private final TriggerRepository triggerRepository;
@@ -139,5 +140,11 @@ public class TaskService implements TaskUseCase {
         Task task = taskRepository.findByTaskIdAndUserId(command.taskId(), command.userId())
                 .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + command.taskId()));
         task.updateTaskName(command.taskName());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Action> getExecutionDetails(Long taskId) {
+        return actionRepository.findAllWithCapabilityAndModuleByTaskId(taskId);
     }
 }

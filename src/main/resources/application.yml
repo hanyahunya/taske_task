@@ -33,6 +33,8 @@ spring:
         spring.json.use.type.headers: true
   # gRPC
   grpc:
+    server:
+      port: 9095
     client:
       channels:
         integration-service:
