@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package com.hanyahunya.grpc;
+
+// Struct 타입을 사용하기 위해 임포트
+import "google/protobuf/struct.proto";
+
+option java_package = "com.hanyahunya.grpc";
+option java_multiple_files = true;
+
+// gRPC 서비스 정의
+service TaskExecutionService {
+  rpc GetExecutionDetails(ExecutionDetailsRequest) returns (ExecutionDetailsResponse);
+}
+
+// req ( worker -> task )
+message ExecutionDetailsRequest {
+  int64 task_id = 1;
+}
+
+// res ( task -> worker )
+message ExecutionDetailsResponse {
+  repeated ActionInfo actions = 1; // ordered actions data
+}
+
+// 액션 정보
+message ActionInfo {
+  int32 execution_order = 1;        // 실행 순서
+  string capability_id = 2;   // (로깅 등에 사용)
+  google.protobuf.Struct action_config = 3;  // Task에 저장된 실제 설정값 (Map -> Struct)
+  ModuleCapabilityInfo capability_info = 4;
+}
+
+// Module 테이블 정보
+message ModuleInfo {
+  string module_id = 1; // "SYSTEM", "GOOGLE", ...
+  string auth_type = 2; // "OAUTH2", "API_KEY", ...
+  string api_base_url = 3;
+}
+
+// ModuleCapability 테이블 정보
+message ModuleCapabilityInfo {
+  string capability_id = 1;
+  string execution_type = 2;
+  google.protobuf.Struct execution_spec = 3;  // (Map -> Struct)
+  google.protobuf.Struct output_schema = 4;   // (Map -> Struct)
+  // required_scopes 필드 제거 (worker에 불필요)
+  ModuleInfo module_info = 6;
+}
