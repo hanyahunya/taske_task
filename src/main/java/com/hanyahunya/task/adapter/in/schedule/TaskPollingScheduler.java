@@ -47,7 +47,6 @@ public class TaskPollingScheduler {
                     FireTriggerCommand command = new FireTriggerCommand(
                             trigger.getTask().getUserId(),
                             trigger.getTask().getTaskId(),
-                            trigger.getCapability().getCapabilityId(),
                             Map.of()
                     );
 
