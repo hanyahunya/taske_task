@@ -43,7 +43,8 @@ message ModuleCapabilityInfo {
   string capability_id = 1;
   string execution_type = 2;
   google.protobuf.Struct execution_spec = 3;  // (Map -> Struct)
-  google.protobuf.Struct output_schema = 4;   // (Map -> Struct)
+  google.protobuf.Struct param_schema = 4;
+  google.protobuf.Struct output_schema = 5;   // (Map -> Struct)
   // required_scopes 필드 제거 (worker에 불필요)
   ModuleInfo module_info = 6;
 }

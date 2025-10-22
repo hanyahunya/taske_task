@@ -14,7 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.grpc.server.service.GrpcService;
 
-import java.util.HashMap; // HashMap import 추가
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -74,7 +75,7 @@ public class TaskExecutionGrpcService extends TaskExecutionServiceGrpc.TaskExecu
 
     /**
      * ModuleCapability Entity -> gRPC ModuleCapabilityInfo DTO
-     * --- ✅ [수정] outputSchema를 필터링하도록 변경 ---
+     * --- ✅ [수정] paramSchema를 필터링하도록 변경 ---
      */
     private ModuleCapabilityInfo buildCapabilityInfo(ModuleCapability capability) {
         // 1. 원본 outputSchema Map을 가져옵니다.
@@ -83,10 +84,15 @@ public class TaskExecutionGrpcService extends TaskExecutionServiceGrpc.TaskExecu
         // 2. "type" 정보만 갖도록 스키마를 필터링합니다.
         Map<String, Object> filteredSchema = filterOutputSchemaForType(originalSchema);
 
-        // 3. 필터링된 Map을 Struct로 변환합니다.
+        // 3. [수정] paramSchema에서 "ignored" + "value"가 있는 항목만 추출합니다.
+        Map<String, Object> paramSchema = capability.getParamSchema();
+        Map<String, Object> ignoredValuesMap = extractIgnoredValuesAsMap(paramSchema);
+
+        // 4. 필터링된 Map들을 Struct로 변환합니다.
         ModuleCapabilityInfo.Builder builder = ModuleCapabilityInfo.newBuilder()
                 .setCapabilityId(capability.getCapabilityId())
                 .setExecutionType(capability.getExecutionType().name())
+                .setParamSchema(toStruct(ignoredValuesMap))
                 .setExecutionSpec(toStruct(capability.getExecutionSpec())) // Struct
                 .setOutputSchema(toStruct(filteredSchema))
                 .setModuleInfo(buildModuleInfo(capability.getModule()));
@@ -95,9 +101,11 @@ public class TaskExecutionGrpcService extends TaskExecutionServiceGrpc.TaskExecu
 
     /**
      * OutputSchema를 "type" 정보만 갖도록 필터링하는 헬퍼 메서드
-     * * @param originalSchema 원본 Map (예: {"success": {"name":"...", "type":"boolean", ...}})
+     *
+     * @param originalSchema 원본 Map (예: {"success": {"name":"...", "type":"boolean", ...}})
      * @return 필터링된 Map (예: {"success": {"type":"boolean"}})
      */
+    @SuppressWarnings("unchecked")
     private Map<String, Object> filterOutputSchemaForType(Map<String, Object> originalSchema) {
         if (originalSchema == null || originalSchema.isEmpty()) {
             return originalSchema;
@@ -120,6 +128,72 @@ public class TaskExecutionGrpcService extends TaskExecutionServiceGrpc.TaskExecu
                             return typeOnlyMap;
                         }
                 ));
+    }
+
+    /**
+     * [추가] paramSchema에서 "ignored" 목록에 지정된 키와
+     * "properties"에 있는 해당 키의 "value"를 추출하여
+     * 새로운 Map (key, value) 으로 반환합니다.
+     *
+     * @param paramSchema 원본 param_schema Map (capability.getParamSchema())
+     * @return "ignored" 키와 "value"로 구성된 새로운 Map (예: {"locale": "ko-KR"})
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> extractIgnoredValuesAsMap(Map<String, Object> paramSchema) {
+        if (paramSchema == null) {
+            return Collections.emptyMap();
+        }
+
+        // 1. "ignored" 목록 가져오기 (List<String>)
+        List<String> ignoredKeys;
+        try {
+            Object ignoredObj = paramSchema.get("ignored");
+            if (!(ignoredObj instanceof List)) {
+                log.debug("paramSchema에 'ignored' 목록이 없거나 List가 아닙니다.");
+                return Collections.emptyMap();
+            }
+            // Type safety를 위해 List<?>를 순회하며 String으로 변환
+            ignoredKeys = ((List<?>) ignoredObj).stream()
+                    .map(Object::toString)
+                    .toList();
+
+        } catch (Exception e) {
+            log.warn("paramSchema 'ignored' 필드 처리 중 오류 발생", e);
+            return Collections.emptyMap();
+        }
+
+        // 2. "properties" Map 가져오기 (Map<String, Object>)
+        Map<String, Object> properties;
+        try {
+            Object propsObj = paramSchema.get("properties");
+            if (!(propsObj instanceof Map)) {
+                log.debug("paramSchema에 'properties'가 없거나 Map이 아닙니다.");
+                return Collections.emptyMap();
+            }
+            properties = (Map<String, Object>) propsObj;
+        } catch (ClassCastException e) {
+            log.warn("paramSchema 'properties' 필드가 Map<String, Object>가 아닙니다.", e);
+            return Collections.emptyMap();
+        }
+
+        // 3. "ignored" 목록을 순회하며 "value" 추출
+        Map<String, Object> resultMap = new HashMap<>();
+        for (String key : ignoredKeys) {
+            // "properties"에서 "locale" 같은 키로 객체를 찾음
+            Object propertyObj = properties.get(key);
+            if (propertyObj instanceof Map) {
+                // {"type": "string", "value": "ko-KR"}
+                Map<String, Object> propertyDetails = (Map<String, Object>) propertyObj;
+                // "value" 키의 값을 찾음
+                Object valueObj = propertyDetails.get("value");
+
+                if (valueObj != null) {
+                    // "value"가 존재하면 resultMap에 추가 (예: "locale", "ko-KR")
+                    resultMap.put(key, valueObj);
+                }
+            }
+        }
+        return resultMap;
     }
 
 
