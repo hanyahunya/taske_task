@@ -2,7 +2,6 @@ package com.hanyahunya.task.domain.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,7 +10,6 @@ import java.util.List;
 
 @Entity
 @Getter
-@Builder
 @Table(name = "modules")
 @NoArgsConstructor
 @AllArgsConstructor

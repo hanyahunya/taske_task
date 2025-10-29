@@ -11,7 +11,7 @@ public interface ActionRepository extends JpaRepository<Action, Long> {
     @Query("SELECT a FROM Action a " +
             "JOIN FETCH a.capability cap " +
             "JOIN FETCH cap.module " +
-            "WHERE a.task.taskId = :taskId " +
+            "WHERE a.task.taskId = :taskId AND cap.isDependency = false " +
             "ORDER BY a.executionOrder ASC")
     List<Action> findAllWithCapabilityAndModuleByTaskId(@Param("taskId") Long taskId);
 }
