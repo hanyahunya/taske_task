@@ -24,7 +24,10 @@ public class TaskPollingScheduler {
     public void pollForScheduledTasks() {
         List<Trigger> scheduledTriggers = triggerRepository.findTriggersByExecutionTypeSchedule();
 
-        LocalDateTime now = LocalDateTime.now();
+        // [변경] 스케쥴러가 43분 59초처럼 분 경계 직전에 실행되는 경우를 대비해,
+        // 현재 시간에 2초의 여유(buffer)를 더한 '유효 시간(effectiveTime)'을 기준 시간으로 사용
+        // 예: now()가 10:43:59.500 -> effectiveTime = 10:44:01.500
+        LocalDateTime effectiveTime = LocalDateTime.now().plusSeconds(1);
 
         for (Trigger trigger : scheduledTriggers) {
             try {
@@ -34,15 +37,16 @@ public class TaskPollingScheduler {
                     continue; // cron 정보가 없으면 건너뜀
                 }
 
-                // cron 표현식을 파싱, 현재 시간과 일치하는지 확인
+                // cron 표현식 파싱
                 CronExpression cron = CronExpression.parse(cronExpression);
 
-                // 이전 1분 전을 기준으로 다음 실행 시간을 계산해야, 현재 분에 실행되어야 할 작업을 놓치지 않기에
-                LocalDateTime lastMinute = now.minusMinutes(1);
+                // [변경] 'now' 대신 'effectiveTime' 을 기준으로 1분 전을 계산합
+                // 예: (10:42:59 ~ 10:43:59] -> (10:43:01 ~ 10:44:01]
+                LocalDateTime lastMinute = effectiveTime.minusMinutes(1);
                 LocalDateTime nextExecutionTime = cron.next(lastMinute);
 
-                // 다음 실행 시간이 있고, 그 시간이 현재 시간보다 이전이거나 같으면 실행 대상
-                if (nextExecutionTime != null && !nextExecutionTime.isAfter(now)) {
+                // [변경] 다음 실행 시간이 있고, 그 시간이 'now' 가 아닌 'effectiveTime' 보다 이전이거나 같으면 실행 대상으로 판단
+                if (nextExecutionTime != null && !nextExecutionTime.isAfter(effectiveTime)) {
 
                     FireTriggerCommand command = new FireTriggerCommand(
                             trigger.getTask().getUserId(),
