@@ -18,15 +18,17 @@ public class ModuleResponse {
     private final List<CapabilityResponse> actions;
 
     public static ModuleResponse from(Module module) {
-        // TRIGGER 타입의 Capability만 필터링하여 DTO 리스트로 변환
+        // TRIGGER 타입이면서 isDependency가 true가 아닌 Capability만 필터링
         List<CapabilityResponse> triggers = module.getCapabilities().stream()
-                .filter(capability -> capability.getCapabilityType() == CapabilityType.TRIGGER)
+                .filter(capability -> capability.getCapabilityType() == CapabilityType.TRIGGER &&
+                        !Boolean.TRUE.equals(capability.getIsDependency()))
                 .map(CapabilityResponse::from)
                 .collect(Collectors.toList());
 
-        // ACTION 타입의 Capability만 필터링하여 DTO 리스트로 변환
+        // ACTION 타입이면서 isDependency가 true가 아닌 Capability만 필터링
         List<CapabilityResponse> actions = module.getCapabilities().stream()
-                .filter(capability -> capability.getCapabilityType() == CapabilityType.ACTION)
+                .filter(capability -> capability.getCapabilityType() == CapabilityType.ACTION &&
+                        !Boolean.TRUE.equals(capability.getIsDependency()))
                 .map(CapabilityResponse::from)
                 .collect(Collectors.toList());
 
