@@ -9,6 +9,7 @@ import com.hanyahunya.task.application.port.in.GetExecutionDetailsUseCase;
 import com.hanyahunya.task.application.port.in.TaskUseCase;
 import com.hanyahunya.task.application.port.response.TaskResponse;
 import com.hanyahunya.task.application.validation.ConfigValidator;
+import com.hanyahunya.task.application.validation.DependencyResolver;
 import com.hanyahunya.task.domain.model.Action;
 import com.hanyahunya.task.domain.model.ModuleCapability;
 import com.hanyahunya.task.domain.model.Task;
@@ -25,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -36,7 +36,9 @@ public class TaskService implements TaskUseCase, GetExecutionDetailsUseCase {
     private final TriggerRepository triggerRepository;
     private final ActionRepository actionRepository;
     private final ModuleCapabilityRepository moduleCapabilityRepository;
+
     private final ConfigValidator configValidator;
+    private final DependencyResolver dependencyResolver;
 
     @Override
     @Transactional
@@ -73,33 +75,16 @@ public class TaskService implements TaskUseCase, GetExecutionDetailsUseCase {
         log.debug("Task ID {}: Trigger 저장 완료", savedTask.getTaskId());
 
 
-        // --- Actions 생성 및 검증 ---
-        List<CreateTaskCommand.ActionCommand> actionCommands = command.actions();
-        List<Action> actions = IntStream.range(0, actionCommands.size())
-                .mapToObj(i -> {
-                    CreateTaskCommand.ActionCommand actionCommand = actionCommands.get(i);
-                    ModuleCapability actionCapability = moduleCapabilityRepository.findById(actionCommand.capabilityId())
-                            .orElseThrow(() -> {
-                                log.warn("잘못된 Action Capability ID 요청: {}", actionCommand.capabilityId());
-                                return new IllegalArgumentException("Invalid action capability id: " + actionCommand.capabilityId());
-                            });
+        log.debug("Task ID {}: Action 의존성 해결 및 생성 시작...", savedTask.getTaskId());
 
-                    // Validator 호출 (Action)
-                    log.debug("Task ID {}: Action {} config 검증 시작... (Capability ID: {})", savedTask.getTaskId(), i, actionCapability.getCapabilityId());
-                    configValidator.validate(actionCapability, actionCommand.config());
-                    log.debug("Task ID {}: Action {} config 검증 완료.", savedTask.getTaskId(), i);
+        // DependencyResolver를 호출하여 의존성 해결, 순서 재정렬, 변수 재조정이 완료된 최종 Action 리스트
+        List<Action> finalActions = dependencyResolver.resolveAndBuildActions(
+                savedTask,
+                command.actions()
+        );
 
-                    return Action.builder()
-                            .task(savedTask)
-                            .capability(actionCapability)
-                            .actionConfig(actionCommand.config())
-                            .executionOrder(i) // 실행 순서
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        actionRepository.saveAll(actions);
-        log.info("Task ID {}: {}개의 Action 저장 완료", savedTask.getTaskId(), actions.size());
+        actionRepository.saveAll(finalActions);
+        log.info("Task ID {}: {}개의 Action(의존성 포함) 저장 완료", savedTask.getTaskId(), finalActions.size());
     }
 
     @Override

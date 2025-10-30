@@ -64,7 +64,7 @@ public class ModuleCapability {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "dependency", columnDefinition = "json")
-    private Map<String, Object> dependency;
+    private List<Map<String, Object>> dependency;
 
     @Column(name = "is_dependency")
     private Boolean isDependency;
