@@ -8,14 +8,20 @@ spring:
     url: ${TASKE_TASK_DB_URL}
     username: ${TASKE_TASK_DB_USERNAME}
     password: ${TASKE_TASK_DB_PASSWORD}
+#  jpa:
+#    database-platform: org.hibernate.dialect.MySQL8Dialect
+#    hibernate:
+#      ddl-auto: update
+#    generate-ddl: true
+#    show-sql: false
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
-    generate-ddl: true
+      ddl-auto: none
+    generate-ddl: false
     show-sql: false
   kafka:
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: ${KAFKA_HOST}:${KAFKA_PORT}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -34,11 +40,11 @@ spring:
   # gRPC
   grpc:
     server:
-      port: 9095
+      port: 9090
     client:
       channels:
         integration-service:
-          address: static://localhost:9091
+          address: static://${INTEGRATION_HOST}:${GRPC_INTEGRATION_PORT}
           negotiation-type: plaintext
 server:
-  port: 8008
+  port: 8080
